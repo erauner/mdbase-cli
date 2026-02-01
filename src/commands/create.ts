@@ -6,15 +6,75 @@ import { Collection } from "@erauner/mdbase";
 import yaml from "js-yaml";
 import matter from "gray-matter";
 
-async function loadTypeTemplate(cwd: string, typeName: string): Promise<string | null> {
+interface FieldDef {
+  type: string;
+  required?: boolean;
+  description?: string;
+  default?: unknown;
+}
+
+interface TypeDef {
+  name: string;
+  template?: string;
+  fields?: Record<string, FieldDef>;
+}
+
+async function loadTypeDef(cwd: string, typeName: string): Promise<TypeDef | null> {
   const typePath = path.join(cwd, "_types", `${typeName}.md`);
   try {
     const content = await fs.readFile(typePath, "utf-8");
     const parsed = matter(content);
-    return parsed.data.template as string | null ?? null;
+    return parsed.data as TypeDef;
   } catch {
     return null;
   }
+}
+
+function validateAndEnrich(
+  frontmatter: Record<string, unknown>,
+  typeDef: TypeDef,
+): { errors: string[]; hints: string[]; enriched: Record<string, unknown> } {
+  const errors: string[] = [];
+  const hints: string[] = [];
+  const enriched = { ...frontmatter };
+  const now = new Date();
+
+  if (!typeDef.fields) {
+    return { errors, hints, enriched };
+  }
+
+  for (const [fieldName, fieldDef] of Object.entries(typeDef.fields)) {
+    const hasValue = fieldName in enriched && enriched[fieldName] != null;
+
+    // Auto-compute date/datetime fields if not provided
+    if (!hasValue && (fieldDef.type === "date" || fieldDef.type === "datetime")) {
+      if (fieldDef.type === "date") {
+        enriched[fieldName] = now.toISOString().split("T")[0];
+      } else {
+        enriched[fieldName] = now.toISOString();
+      }
+      continue;
+    }
+
+    // Apply defaults
+    if (!hasValue && fieldDef.default !== undefined) {
+      enriched[fieldName] = fieldDef.default;
+      continue;
+    }
+
+    // Check required fields
+    if (fieldDef.required && !hasValue) {
+      const desc = fieldDef.description ? ` - ${fieldDef.description}` : "";
+      errors.push(`${fieldName} (${fieldDef.type})${desc}`);
+    }
+
+    // Collect hints for optional fields not provided
+    if (!fieldDef.required && !hasValue && fieldDef.description) {
+      hints.push(`${fieldName}: ${fieldDef.description}`);
+    }
+  }
+
+  return { errors, hints, enriched };
 }
 
 interface TemplateContext {
@@ -143,10 +203,39 @@ export function registerCreate(program: Command): void {
       if (opts.type) {
         input.type = opts.type;
 
-        // Check for template in type definition
-        const template = await loadTypeTemplate(cwd, opts.type);
-        if (template) {
-          body = applyTemplate(template, { body, frontmatter });
+        // Load type definition for validation and template
+        const typeDef = await loadTypeDef(cwd, opts.type);
+        if (typeDef) {
+          // Validate required fields and enrich with defaults/auto-computed values
+          const { errors, hints, enriched } = validateAndEnrich(frontmatter, typeDef);
+
+          if (errors.length > 0) {
+            console.error(chalk.red("error: missing required fields:"));
+            for (const err of errors) {
+              console.error(chalk.red(`  - ${err}`));
+            }
+            if (hints.length > 0 && opts.format !== "json") {
+              console.error(chalk.dim("\nOptional fields you can also provide:"));
+              for (const hint of hints.slice(0, 5)) {
+                console.error(chalk.dim(`  -f "${hint.split(":")[0]}=..."`));
+              }
+            }
+            process.exit(1);
+          }
+
+          // Use enriched frontmatter
+          Object.assign(frontmatter, enriched);
+          input.frontmatter = frontmatter;
+
+          // Apply template if defined
+          if (typeDef.template) {
+            body = applyTemplate(typeDef.template, { body, frontmatter });
+          }
+
+          // Show hints for optional fields (only in text mode, non-error)
+          if (hints.length > 0 && opts.format === "text" && !opts.quiet) {
+            // We'll show these after successful creation
+          }
         }
       }
       if (body !== undefined) {
