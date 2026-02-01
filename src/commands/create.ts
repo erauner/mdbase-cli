@@ -1,8 +1,51 @@
 import { Command } from "commander";
 import path from "node:path";
+import fs from "node:fs/promises";
 import chalk from "chalk";
 import { Collection } from "@erauner/mdbase";
 import yaml from "js-yaml";
+import matter from "gray-matter";
+
+async function loadTypeTemplate(cwd: string, typeName: string): Promise<string | null> {
+  const typePath = path.join(cwd, "_types", `${typeName}.md`);
+  try {
+    const content = await fs.readFile(typePath, "utf-8");
+    const parsed = matter(content);
+    return parsed.data.template as string | null ?? null;
+  } catch {
+    return null;
+  }
+}
+
+interface TemplateContext {
+  body?: string;
+  frontmatter: Record<string, unknown>;
+}
+
+function applyTemplate(template: string, ctx: TemplateContext): string {
+  const now = new Date();
+
+  // Built-in variables
+  const builtins: Record<string, string> = {
+    body: ctx.body ?? "",
+    date: now.toISOString().split("T")[0],
+    time: now.toTimeString().slice(0, 5),
+    now: now.toISOString(),
+  };
+
+  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) => {
+    // Check built-ins first
+    if (key in builtins) return builtins[key];
+    // Then check frontmatter fields
+    if (key in ctx.frontmatter) {
+      const val = ctx.frontmatter[key];
+      if (Array.isArray(val)) return val.join(", ");
+      return String(val ?? "");
+    }
+    // Leave unknown placeholders as-is
+    return match;
+  });
+}
 
 function parseFieldValue(raw: string): unknown {
   // Boolean
@@ -99,6 +142,12 @@ export function registerCreate(program: Command): void {
 
       if (opts.type) {
         input.type = opts.type;
+
+        // Check for template in type definition
+        const template = await loadTypeTemplate(cwd, opts.type);
+        if (template) {
+          body = applyTemplate(template, { body, frontmatter });
+        }
       }
       if (body !== undefined) {
         input.body = body;
