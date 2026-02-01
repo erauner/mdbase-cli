@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import path from "node:path";
 import chalk from "chalk";
-import { Collection } from "mdbase";
-import type { MdbaseError } from "mdbase";
+import { Collection } from "@erauner/mdbase";
+import type { MdbaseError } from "@erauner/mdbase";
 
 function formatIssue(issue: MdbaseError): string {
   const severity = issue.severity ?? "error";

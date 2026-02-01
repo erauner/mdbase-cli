@@ -2,8 +2,8 @@ import { Command } from "commander";
 import fs from "node:fs";
 import path from "node:path";
 import chalk from "chalk";
-import { Collection, loadConfig, loadTypes } from "mdbase";
-import type { TypeDefinition } from "mdbase";
+import { Collection, loadConfig, loadTypes } from "@erauner/mdbase";
+import type { TypeDefinition } from "@erauner/mdbase";
 import yaml from "js-yaml";
 import matter from "gray-matter";
 

@@ -20,6 +20,8 @@ import { registerStats } from "./commands/stats.js";
 import { registerWatch } from "./commands/watch.js";
 import { registerDiff } from "./commands/diff.js";
 import { registerSchema } from "./commands/schema.js";
+import { registerCapture } from "./commands/capture.js";
+import { registerInbox } from "./commands/inbox.js";
 
 const program = new Command();
 
@@ -52,5 +54,9 @@ registerStats(program);
 registerWatch(program);
 registerDiff(program);
 registerSchema(program);
+
+// Quick capture workflow
+registerCapture(program);
+registerInbox(program);
 
 await program.parseAsync();

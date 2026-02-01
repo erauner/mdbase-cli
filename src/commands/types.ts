@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import yaml from "js-yaml";
-import { Collection, loadConfig, loadTypes, getType } from "mdbase";
-import type { FieldDefinition, TypeDefinition } from "mdbase";
+import { Collection, loadConfig, loadTypes, getType } from "@erauner/mdbase";
+import type { FieldDefinition, TypeDefinition } from "@erauner/mdbase";
 
 function formatFieldType(field: FieldDefinition): string {
   let desc = field.type;

@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import fs from "node:fs";
 import chalk from "chalk";
-import { Collection } from "mdbase";
+import { Collection } from "@erauner/mdbase";
 import { stringify } from "csv-stringify/sync";
 
 function formatValue(value: unknown): string {

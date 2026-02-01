@@ -6,7 +6,7 @@
  * returns results ready for formatting.
  */
 
-import { Collection } from "mdbase";
+import { Collection } from "@erauner/mdbase";
 import type { BaseFile, BaseView, FilterExpression } from "./parser.js";
 
 export interface BaseResultRow {
