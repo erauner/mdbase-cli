@@ -22,13 +22,14 @@ import { registerDiff } from "./commands/diff.js";
 import { registerSchema } from "./commands/schema.js";
 import { registerCapture } from "./commands/capture.js";
 import { registerInbox } from "./commands/inbox.js";
+import { registerRun } from "./commands/run.js";
 
 const program = new Command();
 
 program
   .name("mdbase")
   .description("CLI tool for mdbase collections")
-  .version("0.1.0");
+  .version("0.2.0");
 
 // Core spec commands
 registerValidate(program);
@@ -58,5 +59,8 @@ registerSchema(program);
 // Quick capture workflow
 registerCapture(program);
 registerInbox(program);
+
+// YAML query execution
+registerRun(program);
 
 await program.parseAsync();

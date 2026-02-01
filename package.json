@@ -1,6 +1,6 @@
 {
   "name": "@erauner/mdbase-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI tool for mdbase collections — validate, query, CRUD, capture, and execute Obsidian .base files",
   "type": "module",
   "main": "dist/index.js",
@@ -28,7 +28,8 @@
     "cli-table3": "^0.6.0",
     "csv-stringify": "^6.0.0",
     "csv-parse": "^5.0.0",
-    "chokidar": "^4.0.0"
+    "chokidar": "^4.0.0",
+    "yaml": "^2.3.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.0",
